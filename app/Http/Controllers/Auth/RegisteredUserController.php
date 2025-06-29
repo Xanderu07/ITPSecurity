@@ -9,13 +9,13 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Validation\Rules;
+use Illuminate\Validation\Rules\Password;
 use Illuminate\View\View;
 
 class RegisteredUserController extends Controller
 {
     /**
-     * Display the registration view.
+     * Toon het registratieformulier.
      */
     public function create(): View
     {
@@ -23,7 +23,11 @@ class RegisteredUserController extends Controller
     }
 
     /**
-     * Handle an incoming registration request.
+     * Verwerk het registratieformulier.
+     *
+     * Valideer de input, inclusief sterk wachtwoord volgens eisen.
+     * Hash het wachtwoord met bcrypt via Hash::make() — hiermee voorkom je
+     * rainbow table attacks dankzij de ingebouwde salt.
      *
      * @throws \Illuminate\Validation\ValidationException
      */
@@ -32,19 +36,28 @@ class RegisteredUserController extends Controller
         $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:'.User::class],
-            'password' => ['required', 'confirmed', Rules\Password::defaults()],
+            'password' => [
+                'required',
+                'confirmed',
+                Password::min(12)       // minimaal 12 tekens
+                ->mixedCase()      // hoofd- en kleine letters
+                ->numbers()        // cijfers
+                ->symbols()        // speciale tekens
+                ->uncompromised(), // niet gelekt in datalekken
+            ],4
         ]);
 
+        // Wachtwoord wordt gehashed met bcrypt en een unieke salt toegevoegd
         $user = User::create([
             'name' => $request->name,
             'email' => $request->email,
             'password' => Hash::make($request->password),
-        ]);
+        ]);4
 
         event(new Registered($user));
 
         Auth::login($user);
 
-        return redirect(route('dashboard', absolute: false));
+        return redirect(route('dashboard'));
     }
 }
