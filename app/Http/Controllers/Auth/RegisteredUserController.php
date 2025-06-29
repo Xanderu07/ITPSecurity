@@ -43,8 +43,8 @@ class RegisteredUserController extends Controller
                 ->mixedCase()      // hoofd- en kleine letters
                 ->numbers()        // cijfers
                 ->symbols()        // speciale tekens
-                ->uncompromised(), // niet gelekt in datalekken
-            ],4
+                ->uncompromised(), // niet gelekt in datalekkenz
+            ],
         ]);
 
         // Wachtwoord wordt gehashed met bcrypt en een unieke salt toegevoegd
@@ -52,7 +52,7 @@ class RegisteredUserController extends Controller
             'name' => $request->name,
             'email' => $request->email,
             'password' => Hash::make($request->password),
-        ]);4
+        ]);
 
         event(new Registered($user));
 
